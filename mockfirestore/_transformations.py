@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 from mockfirestore._helpers import get_document_iterator, get_by_path, set_by_path, delete_by_path
 
 
-def apply_transformations(document: Dict[str, Any], data: Dict[str, Any]):
+def apply_transformations(document: Dict[str, Any], data: Dict[str, Any], deepmerge: bool = False):
     """Handles special fields like INCREMENT."""
     increments = {}
     arr_unions = {}
@@ -40,7 +40,7 @@ def apply_transformations(document: Dict[str, Any], data: Dict[str, Any]):
         # All other transformations can be applied as needed.
         # See #29 for tracking.
 
-    def _update_data(new_values: dict, default: Any):
+    def _update_data(new_values: dict, default: Any, deepmerge: bool = False):
         for key, value in new_values.items():
             path = key.split('.')
 
@@ -49,20 +49,20 @@ def apply_transformations(document: Dict[str, Any], data: Dict[str, Any]):
             except (TypeError, KeyError):
                 item = default
 
-            set_by_path(data, path, item + value, create_nested=True)
+            set_by_path(data, path, item + value, create_nested=True, deepmerge=deepmerge)
 
     _update_data(increments, 0)
     _update_data(arr_unions, [])
 
-    _apply_updates(document, data)
+    _apply_updates(document, data, deepmerge)
     _apply_deletes(document, deletes)
     _apply_arr_deletes(document, arr_deletes)
 
 
-def _apply_updates(document: Dict[str, Any], data: Dict[str, Any]):
+def _apply_updates(document: Dict[str, Any], data: Dict[str, Any], deepmerge: bool = False):
     for key, value in data.items():
         path = key.split(".")
-        set_by_path(document, path, value, create_nested=True)
+        set_by_path(document, path, value, create_nested=True, deepmerge=deepmerge)
 
 
 def _apply_deletes(document: Dict[str, Any], data: List[str]):
