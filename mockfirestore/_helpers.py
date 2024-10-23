@@ -26,9 +26,13 @@ def get_by_path(data: Dict[str, T], path: Sequence[str], create_nested: bool = F
         return reduce(operator.getitem, path, data)
 
 
-def set_by_path(data: Dict[str, T], path: Sequence[str], value: T, create_nested: bool = True):
+def set_by_path(data: Dict[str, T], path: Sequence[str], value: T, create_nested: bool = True, deepmerge: bool = False):
     """Set a value in a nested object in root by item sequence."""
-    get_by_path(data, path[:-1], create_nested=True)[path[-1]] = value
+    if deepmerge:
+        old = get_by_path(data, path[:-1], create_nested=True)[path[-1]]
+        get_by_path(data, path[:-1], create_nested=True)[path[-1]] = merge_dicts(old, value)
+    else:
+        get_by_path(data, path[:-1], create_nested=True)[path[-1]] = value
 
 
 def delete_by_path(data: Dict[str, T], path: Sequence[str]):
@@ -75,3 +79,14 @@ def get_document_iterator(document: Dict[str, Any], prefix: str = '') -> Iterato
             yield key, value
         else:
             yield '{}.{}'.format(prefix, key), value
+
+def merge_dicts(a: dict, b: dict, path=[]):
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                merge_dicts(a[key], b[key], path + [str(key)])
+            elif a[key] != b[key]:
+                a[key] = b[key]
+        else:
+            a[key] = b[key]
+    return a
