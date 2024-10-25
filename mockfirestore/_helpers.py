@@ -30,7 +30,10 @@ def set_by_path(data: Dict[str, T], path: Sequence[str], value: T, create_nested
     """Set a value in a nested object in root by item sequence."""
     if deepmerge:
         old = get_by_path(data, path[:-1], create_nested=True)[path[-1]]
-        get_by_path(data, path[:-1], create_nested=True)[path[-1]] = merge_dicts(old, value)
+        if isinstance(old, dict) and isinstance(value, dict):
+            get_by_path(data, path[:-1], create_nested=True)[path[-1]] = merge_dicts(old, value)
+        else:
+            get_by_path(data, path[:-1], create_nested=True)[path[-1]] = value
     else:
         get_by_path(data, path[:-1], create_nested=True)[path[-1]] = value
 
